@@ -1,1 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 과목</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: rgb(214, 214, 255);
+      --ink: #30318c;
+      --blue: #6666df;
+      --card: #f8f8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, "Malgun Gothic", sans-serif;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 5%;
+    }
+
+    .brand {
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 1.3rem;
+      font-weight: 900;
+    }
+
+    main {
+      width: min(1100px, 92%);
+      margin: auto;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 35px 10px 20px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: -2px;
+    }
+
+    .subtitle {
+      color: #55569d;
+    }
+
+    .subject-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 15px;
+      margin: 35px 0 50px;
+    }
+
+    .subject-card {
+      display: block;
+      padding: 25px 10px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--card);
+      border-radius: 22px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      box-shadow: 0 8px 22px #7777aa20;
+      transition: 0.2s;
+    }
+
+    .subject-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 25px #7777aa40;
+    }
+
+    .subject-icon {
+      display: block;
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px;
+      gap: 25px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 24px;
+      background: #ffffffc9;
+      border-radius: 22px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 7px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #c7c7f2;
+      border-radius: 12px;
+      font: inherit;
+      background: white;
+    }
+
+    textarea {
+      min-height: 85px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      background: var(--blue);
+      color: white;
+      font: inherit;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .status {
+      color: #55569d;
+      font-size: 0.9rem;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .video-card {
+      overflow: hidden;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e4e4ff;
+    }
+
+    .video-card video {
+      display: block;
+      width: 100%;
+      max-height: 300px;
+      background: #202044;
+    }
+
+    .video-info {
+      padding: 15px;
+    }
+
+    .video-info h3 {
+      margin-top: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .video-info p {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #5d5d91;
+    }
+
+    .date {
+      color: #8585ad;
+      font-size: 0.8rem;
+    }
+
+    .mascot-box {
+      position: sticky;
+      top: 20px;
+      text-align: center;
+    }
+
+    .mascot {
+      width: 100%;
+      max-width: 190px;
+      height: auto;
+    }
+
+    .mascot-caption {
+      font-weight: bold;
+      color: #55569d;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    footer {
+      padding: 35px 12px;
+      text-align: center;
+      color: #69699f;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 760px) {
+      .subject-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .subject-card:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .mascot-box {
+        position: static;
+        order: -1;
+      }
+
+      .mascot {
+        max-width: 120px;
+      }
+
+      .video-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <a class="brand" href="./">오늘의 과목 ✦</a>
+    <a class="brand" href="./" style="font-size: 1rem;">
+      과목 선택
+    </a>
+  </header>
+
+  <main>
+    <!-- 메인 화면 -->
+    <section id="homePage">
+      <div class="hero">
+        <h1>오늘의 과목</h1>
+        <p class="subtitle">
+          배움과 영상을 함께 나누는 공간
+        </p>
+      </div>
+
+      <nav class="subject-grid">
+        <a class="subject-card" href="?subject=국어">
+          <span class="subject-icon">📚</span>
+          국어
+        </a>
+
+        <a class="subject-card" href="?subject=영어">
+          <span class="subject-icon">🌐</span>
+          영어
+        </a>
+
+        <a class="subject-card" href="?subject=수학">
+          <span class="subject-icon">➗</span>
+          수학
+        </a>
+
+        <a class="subject-card" href="?subject=과학">
+          <span class="subject-icon">🧪</span>
+          과학
+        </a>
+
+        <a class="subject-card" href="?subject=사회">
+          <span class="subject-icon">🌏</span>
+          사회
+        </a>
+      </nav>
+    </section>
+
+    <!-- 과목별 영상 화면 -->
+    <section id="subjectPage" class="hidden">
+      <div class="hero">
+        <h1 id="subjectTitle">과목 영상</h1>
+        <p class="subtitle">
+          영상을 올리고 함께 시청해 보세요.
+        </p>
+      </div>
+
+      <div class="layout">
+        <div>
+          <!-- 영상 업로드 -->
+          <section class="panel">
+            <h2>🎬 영상 게시하기</h2>
+
+            <form id="uploadForm">
+              <label for="videoTitle">영상 제목</label>
+              <input
+                id="videoTitle"
+                type="text"
+                maxlength="120"
+                placeholder="영상 제목을 입력하세요."
+                required
+              >
+
+              <label for="videoDescription">영상 설명</label>
+              <textarea
+                id="videoDescription"
+                maxlength="1000"
+                placeholder="영상에 대한 설명을 입력하세요."
+              ></textarea>
+
+              <label for="videoFile">영상 파일</label>
+              <input
+                id="videoFile"
+                type="file"
+                accept="video/*"
+                required
+              >
+
+              <div class="form-actions">
+                <button id="uploadButton" type="submit">
+                  영상 올리기
+                </button>
+
+                <span id="uploadStatus" class="status">
+                  업로드 준비 중
+                </span>
+              </div>
+            </form>
+          </section>
+
+          <!-- 게시된 영상 -->
+          <section style="margin-top: 30px;">
+            <h2>📺 게시된 영상</h2>
+
+            <p id="listStatus" class="status">
+              영상 목록을 불러오는 중...
+            </p>
+
+            <div id="videoList" class="video-grid"></div>
+          </section>
+        </div>
+
+        <!-- 사이드 캐릭터 -->
+        <aside class="mascot-box">
+          <img
+            class="mascot"
+            src="assets/mascot.png"
+            alt="파란 헤드폰을 쓴 픽셀 캐릭터"
+          >
+
+          <p class="mascot-caption">
+            오늘도 한 걸음 성장하기 ✨
+          </p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    오늘의 과목 · 함께 배우고 함께 나누기
+  </footer>
+
+  <script>
+    // Supabase 프로젝트 정보를 입력하세요.
+    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+    // Supabase Storage 버킷 이름
+    const BUCKET_NAME = "subject-videos";
+
+    // 사용할 과목 목록
+    const subjects = ["국어", "영어", "수학", "과학", "사회"];
+
+    const params = new URLSearchParams(location.search);
+    const selectedSubject = params.get("subject");
+
+    const homePage = document.getElementById("homePage");
+    const subjectPage = document.getElementById("subjectPage");
+    const uploadForm = document.getElementById("uploadForm");
+    const uploadButton = document.getElementById("uploadButton");
+    const uploadStatus = document.getElementById("uploadStatus");
+    const listStatus = document.getElementById("listStatus");
+    const videoList = document.getElementById("videoList");
+
+    let supabaseClient = null;
+
+    // Supabase 설정이 입력되었는지 확인합니다.
+    const configured =
+      SUPABASE_URL.startsWith("https://") &&
+      !SUPABASE_URL.includes("YOUR_") &&
+      !SUPABASE_ANON_KEY.includes("YOUR_");
+
+    // 과목 버튼을 누르면 과목별 페이지를 표시합니다.
+    if (subjects.includes(selectedSubject)) {
+      homePage.classList.add("hidden");
+      subjectPage.classList.remove("hidden");
+
+      document.getElementById("subjectTitle").textContent =
+        selectedSubject + " 영상";
+    }
+
+    // Supabase 연결
+    if (configured && window.supabase) {
+      supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+      );
+
+      if (subjects.includes(selectedSubject)) {
+        loadVideos();
+        uploadStatus.textContent = "영상을 게시할 수 있어요.";
+      }
+    } else if (subjects.includes(selectedSubject)) {
+      listStatus.textContent =
+        "Supabase URL과 키를 먼저 설정해 주세요.";
+
+      uploadStatus.textContent = "Supabase 설정이 필요해요.";
+    }
+
+    // 영상 업로드
+    uploadForm.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      if (!supabaseClient) {
+        alert("먼저 Supabase 설정을 완료해 주세요.");
+        return;
+      }
+
+      const title =
+        document.getElementById("videoTitle").value.trim();
+
+      const description =
+        document.getElementById("videoDescription").value.trim();
+
+      const file =
+        document.getElementById("videoFile").files[0];
+
+      if (!file || !file.type.startsWith("video/")) {
+        alert("영상 파일을 선택해 주세요.");
+        return;
+      }
+
+      uploadButton.disabled = true;
+      uploadStatus.textContent = "영상 업로드 중입니다...";
+
+      try {
+        // 파일 이름을 안전하게 정리합니다.
+        const safeName = file.name.replace(
+          /[^a-zA-Z0-9._-]/g,
+          "_"
+        );
+
+        const filePath =
+          selectedSubject + "/" + Date.now() + "-" + safeName;
+
+        // 영상 파일을 Storage에 저장합니다.
+        const { error: uploadError } =
+          await supabaseClient.storage
+            .from(BUCKET_NAME)
+            .upload(filePath, file, {
+              upsert: false,
+              contentType: file.type
+            });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // 영상 정보를 데이터베이스에 저장합니다.
+        const { error: insertError } =
+          await supabaseClient
+            .from("videos")
+            .insert({
+              subject: selectedSubject,
+              title: title,
+              description: description,
+              storage_path: filePath
+            });
+
+        if (insertError) {
+          // 게시글 저장에 실패하면 영상 파일 삭제를 시도합니다.
+          await supabaseClient.storage
+            .from(BUCKET_NAME)
+            .remove([filePath]);
+
+          throw insertError;
+        }
+
+        uploadForm.reset();
+        uploadStatus.textContent = "영상 게시가 완료되었어요!";
+
+        await loadVideos();
+
+      } catch (error) {
+        console.error(error);
+
+        uploadStatus.textContent =
+          "업로드 실패: " + (error.message || "설정을 확인해 주세요.");
+
+      } finally {
+        uploadButton.disabled = false;
+      }
+    });
+
+    // 해당 과목의 영상 목록을 불러옵니다.
+    async function loadVideos() {
+      videoList.replaceChildren();
+
+      if (!supabaseClient) {
+        return;
+      }
+
+      listStatus.textContent = "영상 목록을 불러오는 중...";
+
+      const { data, error } = await supabaseClient
+        .from("videos")
+        .select(
+          "id, subject, title, description, storage_path, created_at"
+        )
+        .eq("subject", selectedSubject)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+
+        listStatus.textContent =
+          "목록을 불러오지 못했어요. 데이터베이스 설정을 확인해 주세요.";
+
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        listStatus.textContent =
+          "아직 게시된 영상이 없어요. 첫 영상을 올려 보세요!";
+
+        return;
+      }
+
+      listStatus.textContent = data.length + "개의 영상";
+
+      data.forEach(function(video) {
+        // 공개 버킷에 저장된 영상의 재생 주소를 가져옵니다.
+        const { data: urlData } =
+          supabaseClient.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(video.storage_path);
+
+        const card = document.createElement("article");
+        card.className = "video-card";
+
+        const player = document.createElement("video");
+        player.controls = true;
+        player.preload = "metadata";
+        player.src = urlData.publicUrl;
+        player.setAttribute("aria-label", video.title);
+
+        const info = document.createElement("div");
+        info.className = "video-info";
+
+        const title = document.createElement("h3");
+        title.textContent = video.title;
+
+        const description = document.createElement("p");
+        description.textContent =
+          video.description || "설명이 없습니다.";
+
+        const date = document.createElement("span");
+        date.className = "date";
+        date.textContent = new Date(
+          video.created_at
+        ).toLocaleString("ko-KR");
+
+        info.append(title, description, date);
+        card.append(player, info);
+        videoList.append(card);
+      });
+    }
+  </script>
+</body>
+</html>
