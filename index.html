@@ -58,7 +58,12 @@
       font-weight: bold;
     }
 
-    /* 왼쪽 목록과 오른쪽 영상 화면 */
+    .subject-button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    /* 왼쪽 영상 목록과 오른쪽 재생 화면 */
     .layout {
       display: grid;
       grid-template-columns: 280px minmax(0, 1fr);
@@ -79,6 +84,7 @@
     .panel h2 {
       font-size: 21px;
       margin: 0 0 18px;
+      overflow-wrap: anywhere;
     }
 
     /* 영상 제목 목록 */
@@ -231,43 +237,40 @@
     import { createClient }
       from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-    // Supabase 프로젝트 정보 입력
+    // 1. Supabase 프로젝트 정보 입력
     const SUPABASE_URL = "https://lmnsvmrmjvchwkoaftyq.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_lvuCUrAbKitYPxH2tA2XnA_-3rJ_QLN";
     const BUCKET_NAME = "subject-videos";
 
-const subjectFolders = {
-  "국어": "Korean",
-  "영어": "English",
-  "수학": "Math",
-  "과학": "Science",
-  "사회": "Social"
-};
+    // 2. 화면에 표시할 과목과 실제 Storage 폴더 이름 연결
+    const subjectFolders = {
+      "국어": "Korean",
+      "영어": "English",
+      "수학": "Math",
+      "과학": "Science",
+      "사회": "Social"
+    };
 
-async function loadVideos(subject) {
-  // 영상 목록을 불러오는 코드
-
-  .list(subjectFolders[subject], 
-}
-
+    // Supabase 연결
     const supabase = createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
 
-    const subjects = ["국어", "영어", "수학", "과학", "사회"];
-
-    let currentSubject = "국어";
-    let currentVideos = [];
-    let selectedVideoName = "";
-
+    // HTML 요소 가져오기
     const videoList = document.getElementById("video-list");
     const listHeading = document.getElementById("list-heading");
     const playerArea = document.getElementById("player-area");
     const videoTitle = document.getElementById("video-title");
     const videoDescription = document.getElementById("video-description");
+    const subjectButtons = document.querySelectorAll(".subject-button");
 
-    // 파일명에서 확장자를 제거해 제목으로 사용
+    // 현재 선택된 과목과 영상 정보
+    let currentSubject = "국어";
+    let currentVideos = [];
+    let loadNumber = 0;
+
+    // 파일명에서 확장자 제거
     function getVideoTitle(fileName) {
       return fileName.replace(/\.[^/.]+$/, "");
     }
@@ -277,7 +280,7 @@ async function loadVideos(subject) {
       return /\.(mp4|webm|ogv|mov|m4v)$/i.test(fileName);
     }
 
-    // 안내 메시지 표시
+    // 영상 목록에 안내 메시지 표시
     function showMessage(message) {
       videoList.replaceChildren();
 
@@ -288,67 +291,93 @@ async function loadVideos(subject) {
       videoList.appendChild(paragraph);
     }
 
+    // 재생 화면 초기화
+    function resetPlayer() {
+      playerArea.replaceChildren();
+
+      const placeholder = document.createElement("div");
+      placeholder.className = "placeholder";
+
+      const icon = document.createElement("div");
+      icon.className = "play-icon";
+      icon.textContent = "▶";
+
+      const message = document.createElement("p");
+      message.textContent = "왼쪽 목록에서 영상을 선택해 줘.";
+
+      placeholder.append(icon, message);
+      playerArea.appendChild(placeholder);
+
+      videoTitle.textContent = "영상을 선택해 주세요";
+      videoDescription.textContent = "";
+    }
+
     // 선택한 과목의 영상 목록 불러오기
     async function loadVideos(subject) {
+      // 이전 요청의 결과가 늦게 도착해 화면을 덮지 않도록 확인
+      const thisLoadNumber = ++loadNumber;
+
       currentSubject = subject;
       currentVideos = [];
-      selectedVideoName = "";
 
-      listHeading.textContent = `📚 ${subject} 영상 목록`;
-
-      // 현재 선택된 과목 버튼 표시
-      document.querySelectorAll(".subject-button").forEach(button => {
+      // 선택한 과목 버튼 강조
+      subjectButtons.forEach(button => {
         button.classList.toggle(
           "active",
           button.dataset.subject === subject
         );
       });
 
-      // 이전 영상 초기화
-      playerArea.replaceChildren();
+      listHeading.textContent = `📚 ${subject} 영상 목록`;
 
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder";
-      placeholder.textContent = "왼쪽 목록에서 영상을 선택해 줘.";
-      playerArea.appendChild(placeholder);
-
-      videoTitle.textContent = "영상을 선택해 주세요";
-      videoDescription.textContent = "";
-
+      resetPlayer();
       showMessage("영상을 불러오는 중...");
 
-      try {
-  // Storage에서 해당 과목 폴더의 파일 목록 가져오기
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .list(subjectFolders[subject], {
-      limit: 100,
-      sortBy: {
-        column: "name",
-        order: "asc"
+      // 과목 폴더 이름 확인
+      const folderName = subjectFolders[subject];
+
+      if (!folderName) {
+        showMessage("해당 과목의 폴더를 찾을 수 없어.");
+        return;
       }
-    });
+
+      try {
+        // 해당 과목 폴더의 파일 목록 가져오기
+        const { data, error } = await supabase.storage
+          .from(BUCKET_NAME)
+          .list(folderName, {
+            limit: 100,
+            sortBy: {
+              column: "name",
+              order: "asc"
+            }
+          });
+
+        // 다른 과목으로 바뀌었다면 이전 결과 무시
+        if (thisLoadNumber !== loadNumber) {
+          return;
+        }
 
         if (error) {
           throw error;
         }
 
-        // 실제 동영상 파일만 남기기
+        // 동영상 파일만 남기기
         currentVideos = (data || []).filter(file => {
           return file.name &&
-            file.id &&
             isVideoFile(file.name);
         });
 
+        // 영상이 없는 경우
         if (currentVideos.length === 0) {
           showMessage(
-            `${subject} 폴더에 영상이 없어. ` +
-            "Supabase Storage의 폴더와 파일을 확인해 줘."
+            `${subject} 폴더에서 동영상을 찾지 못했어.\n` +
+            "Supabase Storage의 폴더 이름과 파일 형식을 확인해 줘."
           );
           return;
         }
 
-        // 영상 제목 버튼 만들기
+        // 영상 목록 버튼 만들기
         videoList.replaceChildren();
 
         currentVideos.forEach(file => {
@@ -357,29 +386,41 @@ async function loadVideos(subject) {
           button.textContent = getVideoTitle(file.name);
 
           button.addEventListener("click", () => {
-            playVideo(file);
+            playVideo(file, subject);
           });
 
           videoList.appendChild(button);
         });
 
       } catch (error) {
+        // 오래된 요청의 오류는 현재 화면에 표시하지 않음
+        if (thisLoadNumber !== loadNumber) {
+          return;
+        }
+
         console.error("영상 목록 불러오기 오류:", error);
 
         showMessage(
-          "영상 목록을 불러오지 못했어. " +
-          "버킷 이름, 공개 권한, Storage 정책을 확인해 줘."
+          "영상 목록을 불러오지 못했어.\n" +
+          "Supabase URL, 키, 버킷 이름, 폴더 이름 및 Storage 정책을 확인해 줘."
         );
       }
     }
 
     // 선택한 영상 재생하기
-    function playVideo(file) {
-      selectedVideoName = file.name;
+    function playVideo(file, subject) {
+      // 다른 과목의 영상이 재생되는 것을 방지
+      if (subject !== currentSubject) {
+        return;
+      }
+
+      // 파일의 실제 영문 폴더 경로 사용
+      const folderName = subjectFolders[subject];
+      const filePath = `${folderName}/${file.name}`;
 
       const { data } = supabase.storage
         .from(BUCKET_NAME)
-        .getPublicUrl(`${currentSubject}/${file.name}`);
+        .getPublicUrl(filePath);
 
       const video = document.createElement("video");
       video.controls = true;
@@ -387,9 +428,11 @@ async function loadVideos(subject) {
       video.preload = "metadata";
       video.src = data.publicUrl;
 
+      // 재생 오류 안내
       video.addEventListener("error", () => {
         videoDescription.textContent =
-          "영상을 재생할 수 없어. 파일 형식과 Storage 주소를 확인해 줘.";
+          "영상을 재생할 수 없어.\n" +
+          "파일 주소, 공개 설정, 파일 형식을 확인해 줘.";
       });
 
       playerArea.replaceChildren(video);
@@ -397,17 +440,17 @@ async function loadVideos(subject) {
       videoTitle.textContent = getVideoTitle(file.name);
       videoDescription.textContent = "";
 
-      // 선택된 영상 버튼 표시
+      // 선택한 영상 버튼 강조
       document.querySelectorAll(".video-item").forEach(button => {
         button.classList.toggle(
           "active",
-          button.textContent === getVideoTitle(selectedVideoName)
+          button.textContent === getVideoTitle(file.name)
         );
       });
     }
 
-    // 과목 버튼 클릭
-    document.querySelectorAll(".subject-button").forEach(button => {
+    // 과목 버튼 클릭 이벤트 연결
+    subjectButtons.forEach(button => {
       button.addEventListener("click", () => {
         loadVideos(button.dataset.subject);
       });
