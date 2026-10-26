@@ -304,16 +304,16 @@
       showMessage("영상을 불러오는 중...");
 
       try {
-        // Storage에서 해당 과목 폴더의 파일 목록 가져오기
-        const { data, error } = await supabase.storage
-          .from(BUCKET_NAME)
-          .list(subject, {
-            limit: 100,
-            sortBy: {
-              column: "name",
-              order: "asc"
-            }
-          });
+  // Storage에서 해당 과목 폴더의 파일 목록 가져오기
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .list(subjectFolders[subject], {
+      limit: 100,
+      sortBy: {
+        column: "name",
+        order: "asc"
+      }
+    });
 
         if (error) {
           throw error;
