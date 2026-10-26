@@ -235,13 +235,18 @@
     const SUPABASE_URL = "https://lmnsvmrmjvchwkoaftyq.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_lvuCUrAbKitYPxH2tA2XnA_-3rJ_QLN";
     const BUCKET_NAME = "subject-videos";
-    const subjectFolders = {
+
+const subjectFolders = {
   "국어": "Korean",
   "영어": "English",
   "수학": "Math",
   "과학": "Science",
   "사회": "Social"
 };
+
+async function loadVideos(subject) {
+  // 영상 목록을 불러오는 코드
+}
 
     const supabase = createClient(
       SUPABASE_URL,
