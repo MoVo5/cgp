@@ -248,7 +248,7 @@
       "영어": "English",
       "수학": "Math",
       "과학": "Science",
-      "Social": "사회"
+      "사회": "Social"
     };
 
     // Supabase 연결
@@ -352,6 +352,11 @@
               order: "asc"
             }
           });
+        
+console.log("선택한 과목:", subject);
+console.log("조회한 폴더:", folderName);
+console.log("Supabase 파일 목록:", data);
+console.log("Supabase 오류:", error);
 
         // 다른 과목으로 바뀌었다면 이전 결과 무시
         if (thisLoadNumber !== loadNumber) {
