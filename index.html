@@ -336,6 +336,9 @@
       // 과목 폴더 이름 확인
       const folderName = subjectFolders[subject];
 
+      console.log("선택한 과목:", subject);
+      console.log("폴더 연결 결과:", folderName);
+
       if (!folderName) {
         showMessage("해당 과목의 폴더를 찾을 수 없어.");
         return;
