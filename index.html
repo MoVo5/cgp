@@ -1,481 +1,579 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>오늘의 과목</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 과목</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+:root {
+  --site-primary: #7774D8;
+  --site-secondary: #F0DFFF;
+  --site-background: #DCD9FF;
+  --site-on-primary: #FFFFFF;
+  --site-on-secondary: #39346E;
+  --site-on-background: #302D69;
+  --site-font-body: "Pretendard", "Malgun Gothic", Arial, sans-serif;
+  --site-font-heading: "Pretendard", "Malgun Gothic", Arial, sans-serif;
+  --site-heading-scale: 1;
+  --site-spacing-scale: 1;
+  --site-radius-scale: 1;
+  --site-decoration-opacity: 1;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, "Malgun Gothic", sans-serif;
-      background: #D6D6FF;
-      color: #35358D;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    header {
-      text-align: center;
-      padding: 25px 15px 18px;
-    }
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
 
-    header h1 {
-      margin: 0 0 10px;
-      font-size: 38px;
-    }
+body {
+  font-family: var(--site-font-body);
+  background: var(--site-background);
+  color: var(--site-on-background);
+}
 
-    header p {
-      margin: 0;
-      color: #55559A;
-    }
+#app {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--site-background);
+  border-radius: 0;
+  padding: clamp(18px, 3vw, 42px);
+  display: flex;
+  flex-direction: column;
+}
 
-    /* 과목 선택 버튼 */
-    .subjects {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 0 15px 20px;
-    }
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 auto clamp(18px, 3vh, 34px);
+  width: min(100%, 1400px);
+}
 
-    .subject-button {
-      border: 0;
-      border-radius: 20px;
-      padding: 11px 22px;
-      background: white;
-      color: #35358D;
-      font-size: 16px;
-      cursor: pointer;
-    }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-    .subject-button.active {
-      background: #6565E8;
-      color: white;
-      font-weight: bold;
-    }
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  font-weight: 900;
+  box-shadow: 0 8px 20px #514ca833;
+}
 
-    .subject-button:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
+h1 {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: clamp(25px, calc(2.4vw * var(--site-heading-scale)), 38px);
+  letter-spacing: -1.5px;
+}
 
-    /* 왼쪽 영상 목록과 오른쪽 재생 화면 */
-    .layout {
-      display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
-      gap: 20px;
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 24px 30px;
-      min-height: 500px;
-    }
+.subtitle {
+  margin: 5px 0 0;
+  color: #66639A;
+  font-size: clamp(12px, 1.2vw, 15px);
+  font-weight: 600;
+}
 
-    .panel {
-      background: #F7F7FF;
-      border-radius: 18px;
-      padding: 20px;
-      min-width: 0;
-    }
+.header-tag {
+  background: #FFFFFFA8;
+  border: 1px solid #FFFFFF;
+  padding: 10px 16px;
+  border-radius: 999px;
+  color: #514E91;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
 
-    .panel h2 {
-      font-size: 21px;
-      margin: 0 0 18px;
-      overflow-wrap: anywhere;
-    }
+main {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(210px, 1fr));
+  gap: clamp(12px, 2vw, 24px);
+  min-height: 560px;
+}
 
-    /* 영상 제목 목록 */
-    #video-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+.subject {
+  border: 0;
+  border-radius: calc(32px * var(--site-radius-scale));
+  min-height: 210px;
+  padding: clamp(20px, 3vw, 38px);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  color: #34315F;
+  box-shadow: 0 14px 34px #514b8520;
+  transition: transform .2s ease, box-shadow .2s ease;
+  isolation: isolate;
+}
 
-    .video-item {
-      width: 100%;
-      border: 1px solid #D0D0FF;
-      border-radius: 10px;
-      background: white;
-      padding: 13px;
-      text-align: left;
-      color: #35358D;
-      font-size: 15px;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-      cursor: pointer;
-    }
+.subject:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 42px #514b8530;
+}
 
-    .video-item:hover,
-    .video-item.active {
-      background: #E5E5FF;
-      border-color: #6565E8;
-    }
+.subject:focus-visible {
+  outline: 4px solid #35317A;
+  outline-offset: 4px;
+}
 
-    .video-item.active {
-      font-weight: bold;
-    }
+.subject:nth-child(1) {
+  grid-column: span 2;
+  background: #FFF0B8;
+}
 
-    .message {
-      color: #73739A;
-      line-height: 1.7;
-      font-size: 14px;
-    }
+.subject:nth-child(2) {
+  grid-column: span 2;
+  background: #FFD9E7;
+}
 
-    /* 영상 재생 화면 */
-    .video-player {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: #E9E9F8;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+.subject:nth-child(3) {
+  grid-column: span 2;
+  background: #D8E4FF;
+}
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #111;
-    }
+.subject:nth-child(4) {
+  grid-column: 2 / span 2;
+  background: #DDF3D6;
+}
 
-    .placeholder {
-      text-align: center;
-      padding: 20px;
-      color: #6565A0;
-    }
+.subject:nth-child(5) {
+  grid-column: 4 / span 2;
+  background: #E8DFFF;
+}
 
-    .placeholder .play-icon {
-      font-size: 55px;
-      margin-bottom: 10px;
-    }
+.subject::before,
+.subject::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  background: #FFFFFF;
+  opacity: .38;
+}
 
-    #video-title {
-      margin: 18px 0 10px;
-      font-size: 23px;
-      overflow-wrap: anywhere;
-    }
+.subject::before {
+  width: 220px;
+  height: 220px;
+  right: -52px;
+  top: -76px;
+}
 
-    #video-description {
-      color: #66668E;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
+.subject::after {
+  width: 120px;
+  height: 120px;
+  right: 76px;
+  bottom: -74px;
+  opacity: .25;
+}
 
-    @media (max-width: 700px) {
-      header h1 {
-        font-size: 30px;
-      }
+.subject-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
 
-      .layout {
-        grid-template-columns: 1fr;
-        padding: 0 12px 20px;
-        gap: 14px;
-      }
+.subject-icon {
+  font-size: clamp(36px, 5vw, 62px);
+  line-height: 1;
+  filter: drop-shadow(0 7px 8px #4c467322);
+}
 
-      .panel {
-        padding: 16px;
-      }
+.subject-number {
+  font-size: 13px;
+  font-weight: 900;
+  opacity: .55;
+  letter-spacing: 1px;
+}
 
-      .subjects {
-        gap: 7px;
-      }
+.subject-name {
+  display: block;
+  font-size: clamp(31px, 4vw, 54px);
+  font-weight: 950;
+  letter-spacing: -2px;
+  line-height: 1.05;
+}
 
-      .subject-button {
-        padding: 10px 15px;
-      }
-    }
-  </style>
+.subject-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.subject-hint {
+  font-size: clamp(12px, 1.2vw, 15px);
+  font-weight: 750;
+  opacity: .7;
+}
+
+.arrow {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #FFFFFFA8;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+footer {
+  width: min(100%, 1400px);
+  margin: 18px auto 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #69669A;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #25234D88;
+  display: none;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal-backdrop.show {
+  display: grid;
+}
+
+.modal {
+  width: min(100%, 440px);
+  border-radius: 26px;
+  padding: 28px;
+  background: #FFFFFF;
+  color: #353264;
+  box-shadow: 0 25px 80px #17143c55;
+  text-align: center;
+}
+
+.modal-icon {
+  font-size: 42px;
+}
+
+.modal h2 {
+  margin: 12px 0 8px;
+  font-size: 25px;
+}
+
+.modal p {
+  margin: 0;
+  color: #77749A;
+  line-height: 1.6;
+}
+
+.modal button {
+  margin-top: 22px;
+  border: 0;
+  border-radius: 14px;
+  background: #7774D8;
+  color: white;
+  padding: 13px 28px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.social-links {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.social-links a {
+  display: block;
+  padding: 15px 18px;
+  border-radius: 14px;
+  background: #EEE9FF;
+  color: #39346E;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.social-links a:hover {
+  background: #DDD5FF;
+}
+
+@media (max-width: 700px) {
+  #app {
+    padding: 18px;
+  }
+
+  header {
+    align-items: flex-start;
+  }
+
+  .header-tag {
+    display: none;
+  }
+
+  main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    min-height: 0;
+  }
+
+  .subject {
+    grid-column: span 1 !important;
+    min-height: 190px;
+    padding: 20px;
+  }
+
+  .subject:last-child {
+    grid-column: 1 / -1 !important;
+    min-height: 160px;
+  }
+
+  .subject-name {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+
+  footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 390px) {
+  main {
+    gap: 10px;
+  }
+
+  .subject {
+    min-height: 165px;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .subject-icon {
+    font-size: 34px;
+  }
+
+  .subject-name {
+    font-size: 29px;
+  }
+}
+</style>
 </head>
 
 <body>
+
+<div id="app">
+
   <header>
-    <h1>오늘의 과목</h1>
-    <p>좋아하는 과목의 영상을 시청해 보세요 ✨</p>
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div>
+        <h1>오늘의 과목</h1>
+        <p class="subtitle">오늘은 어떤 과목을 공부할까?</p>
+      </div>
+    </div>
+
+    <div class="header-tag">MY STUDY · MOVO</div>
   </header>
 
-  <!-- 과목 선택 -->
-  <nav class="subjects" aria-label="과목 선택">
-    <button class="subject-button active" data-subject="국어">국어</button>
-    <button class="subject-button" data-subject="영어">영어</button>
-    <button class="subject-button" data-subject="수학">수학</button>
-    <button class="subject-button" data-subject="과학">과학</button>
-    <button class="subject-button" data-subject="사회">사회</button>
-  </nav>
+  <main aria-label="과목 선택">
 
-  <main class="layout">
-    <!-- 왼쪽: 영상 목록 -->
-    <section class="panel">
-      <h2 id="list-heading">📚 국어 영상 목록</h2>
-      <div id="video-list">
-        <p class="message">영상을 불러오는 중...</p>
-      </div>
-    </section>
+    <button class="subject" data-subject="국어" type="button">
+      <span class="subject-top">
+        <span class="subject-icon">📖</span>
+        <span class="subject-number">SUBJECT 01</span>
+      </span>
+      <span>
+        <span class="subject-name">국어</span>
+        <span class="subject-bottom">
+          <span class="subject-hint">읽고 생각하는 시간</span>
+          <span class="arrow">↗</span>
+        </span>
+      </span>
+    </button>
 
-    <!-- 오른쪽: 영상 재생 -->
-    <section class="panel">
-      <h2>🎬 영상 시청</h2>
+    <button class="subject" data-subject="영어" type="button">
+      <span class="subject-top">
+        <span class="subject-icon">🌍</span>
+        <span class="subject-number">SUBJECT 02</span>
+      </span>
+      <span>
+        <span class="subject-name">영어</span>
+        <span class="subject-bottom">
+          <span class="subject-hint">새로운 언어와 만나는 시간</span>
+          <span class="arrow">↗</span>
+        </span>
+      </span>
+    </button>
 
-      <div class="video-player" id="player-area">
-        <div class="placeholder">
-          <div class="play-icon">▶</div>
-          <p>왼쪽 목록에서 영상을 선택해 줘.</p>
-        </div>
-      </div>
+    <button class="subject" data-subject="수학" type="button">
+      <span class="subject-top">
+        <span class="subject-icon">📐</span>
+        <span class="subject-number">SUBJECT 03</span>
+      </span>
+      <span>
+        <span class="subject-name">수학</span>
+        <span class="subject-bottom">
+          <span class="subject-hint">차근차근 풀어가는 시간</span>
+          <span class="arrow">↗</span>
+        </span>
+      </span>
+    </button>
 
-      <h3 id="video-title">영상을 선택해 주세요</h3>
-      <p id="video-description">선택한 영상의 설명이 여기에 표시돼.</p>
-    </section>
+    <button class="subject" data-subject="과학" type="button">
+      <span class="subject-top">
+        <span class="subject-icon">🔬</span>
+        <span class="subject-number">SUBJECT 04</span>
+      </span>
+      <span>
+        <span class="subject-name">과학</span>
+        <span class="subject-bottom">
+          <span class="subject-hint">세상의 원리를 발견하는 시간</span>
+          <span class="arrow">↗</span>
+        </span>
+      </span>
+    </button>
+
+    <button class="subject" data-subject="사회" type="button">
+      <span class="subject-top">
+        <span class="subject-icon">🏛️</span>
+        <span class="subject-number">SUBJECT 05</span>
+      </span>
+      <span>
+        <span class="subject-name">사회</span>
+        <span class="subject-bottom">
+          <span class="subject-hint">우리 사회를 알아가는 시간</span>
+          <span class="arrow">↗</span>
+        </span>
+      </span>
+    </button>
+
   </main>
 
-  <script type="module">
-    import { createClient }
-      from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  <footer>
+    <span>한 번의 클릭으로 공부를 시작해 봐!</span>
+    <span>© MOVO · TODAY'S SUBJECT</span>
+  </footer>
 
-    // 1. Supabase 프로젝트 정보 입력
-    const SUPABASE_URL = "https://lmnsvmrmjvchwkoaftyq.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_lvuCUrAbKitYPxH2tA2XnA_-3rJ_QLN";
-    const BUCKET_NAME = "subject-videos";
+</div>
 
-    // 2. 화면에 표시할 과목과 실제 Storage 폴더 이름 연결
-    const subjectFolders = {
-      "국어": "Korean",
-      "영어": "English",
-      "수학": "Math",
-      "과학": "Science",
-      "사회": "Social"
-    };
+<div class="modal-backdrop" id="notice" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
 
-    // Supabase 연결
-    const supabase = createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+  <div class="modal">
+    <div class="modal-icon">🔗</div>
+    <h2 id="noticeTitle">영상 링크를 연결해 주세요</h2>
+    <p id="noticeText">
+      이 과목의 영상 주소가 아직 입력되지 않았어요.
+    </p>
+    <button type="button" id="closeNotice">확인</button>
+  </div>
 
-    // HTML 요소 가져오기
-    const videoList = document.getElementById("video-list");
-    const listHeading = document.getElementById("list-heading");
-    const playerArea = document.getElementById("player-area");
-    const videoTitle = document.getElementById("video-title");
-    const videoDescription = document.getElementById("video-description");
-    const subjectButtons = document.querySelectorAll(".subject-button");
+</div>
 
-    // 현재 선택된 과목과 영상 정보
-    let currentSubject = "국어";
-    let currentVideos = [];
-    let loadNumber = 0;
+<script>
 
-    // 파일명에서 확장자 제거
-    function getVideoTitle(fileName) {
-      return fileName.replace(/\.[^/.]+$/, "");
+// 과목별 Google Drive 영상 링크
+const videoLinks = {
+
+  "국어": "",
+
+  "영어": "https://drive.google.com/file/d/12xPhuBSJ-xIkuNGQWeK9LpQ3MUvApXzf/view?usp=sharing",
+
+  "수학": "https://drive.google.com/file/d/1XUrqdFnD9V94mWKcX7O95sa8FvEPiDdY/view?usp=sharing",
+
+  "과학": "",
+
+  "사회": {
+    "역사": "https://drive.google.com/file/d/1kpgeb1EAGxviiYWCTU4hGNzVTWt0OOAM/view?usp=sharing",
+
+    "일반사회": "https://drive.google.com/file/d/1B8Iv_FKOJuakhrHjHKUjk41FnrwIhsSu/view?usp=sharing"
+  }
+
+};
+
+const notice = document.getElementById("notice");
+const noticeText = document.getElementById("noticeText");
+const closeNotice = document.getElementById("closeNotice");
+
+document.querySelectorAll(".subject").forEach((button) => {
+
+  button.addEventListener("click", () => {
+
+    const subject = button.dataset.subject;
+    const link = videoLinks[subject];
+
+    if (subject === "사회") {
+
+      noticeText.innerHTML =
+        '<span class="social-links">' +
+        '<a href="' + link["역사"] + '" target="_blank" rel="noopener noreferrer">📜 역사 영상 보기</a>' +
+        '<a href="' + link["일반사회"] + '" target="_blank" rel="noopener noreferrer">🏛️ 일반사회 영상 보기</a>' +
+        '</span>';
+
+      document.getElementById("noticeTitle").textContent = "사회 과목 선택";
+
+      notice.classList.add("show");
+      closeNotice.focus();
+
+    } else if (link) {
+
+      window.open(link, "_blank", "noopener,noreferrer");
+
+    } else {
+
+      document.getElementById("noticeTitle").textContent = "영상 준비 중";
+
+      noticeText.textContent =
+        `${subject} 과목의 영상은 아직 준비 중이에요. 조금만 기다려 주세요!`;
+
+      notice.classList.add("show");
+      closeNotice.focus();
+
     }
 
-    // 동영상 파일인지 확인
-    function isVideoFile(fileName) {
-      return /\.(mp4|webm|ogv|mov|m4v)$/i.test(fileName);
-    }
+  });
 
-    // 영상 목록에 안내 메시지 표시
-    function showMessage(message) {
-      videoList.replaceChildren();
+});
 
-      const paragraph = document.createElement("p");
-      paragraph.className = "message";
-      paragraph.textContent = message;
+function closeDialog() {
+  notice.classList.remove("show");
+}
 
-      videoList.appendChild(paragraph);
-    }
+closeNotice.addEventListener("click", closeDialog);
 
-    // 재생 화면 초기화
-    function resetPlayer() {
-      playerArea.replaceChildren();
+notice.addEventListener("click", (event) => {
+  if (event.target === notice) closeDialog();
+});
 
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder";
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeDialog();
+});
 
-      const icon = document.createElement("div");
-      icon.className = "play-icon";
-      icon.textContent = "▶";
+</script>
 
-      const message = document.createElement("p");
-      message.textContent = "왼쪽 목록에서 영상을 선택해 줘.";
-
-      placeholder.append(icon, message);
-      playerArea.appendChild(placeholder);
-
-      videoTitle.textContent = "영상을 선택해 주세요";
-      videoDescription.textContent = "";
-    }
-
-    // 선택한 과목의 영상 목록 불러오기
-    async function loadVideos(subject) {
-      // 이전 요청의 결과가 늦게 도착해 화면을 덮지 않도록 확인
-      const thisLoadNumber = ++loadNumber;
-
-      currentSubject = subject;
-      currentVideos = [];
-
-      // 선택한 과목 버튼 강조
-      subjectButtons.forEach(button => {
-        button.classList.toggle(
-          "active",
-          button.dataset.subject === subject
-        );
-      });
-
-      listHeading.textContent = `📚 ${subject} 영상 목록`;
-
-      resetPlayer();
-      showMessage("영상을 불러오는 중...");
-
-      // 과목 폴더 이름 확인
-      const folderName = subjectFolders[subject];
-
-      console.log("선택한 과목:", subject);
-      console.log("폴더 연결 결과:", folderName);
-
-
-      if (!folderName) {
-        showMessage("해당 과목의 폴더를 찾을 수 없어.");
-        return;
-      }
-
-      try {
-        // 해당 과목 폴더의 파일 목록 가져오기
-        const { data, error } = await supabase.storage
-          .from(BUCKET_NAME)
-          .list(folderName, {
-            limit: 100,
-            sortBy: {
-              column: "name",
-              order: "asc"
-            }
-          });
-        
-console.log("선택한 과목:", subject);
-console.log("조회한 폴더:", folderName);
-console.log("Supabase 파일 목록:", data);
-console.log("Supabase 오류:", error);
-
-const { data: rootData, error: rootError } =
-  await supabase.storage
-    .from(BUCKET_NAME)
-    .list("", { limit: 100 });
-
-console.log("버킷 최상위 목록:", rootData);
-console.log("최상위 목록 오류:", rootError);
-
-
-        // 다른 과목으로 바뀌었다면 이전 결과 무시
-        if (thisLoadNumber !== loadNumber) {
-          return;
-        }
-
-        if (error) {
-          throw error;
-        }
-
-        // 동영상 파일만 남기기
-        currentVideos = (data || []).filter(file => {
-          return file.name &&
-            isVideoFile(file.name);
-        });
-
-        // 영상이 없는 경우
-        if (currentVideos.length === 0) {
-          showMessage(
-            `${subject} 폴더에서 동영상을 찾지 못했어.\n` +
-            "Supabase Storage의 폴더 이름과 파일 형식을 확인해 줘."
-          );
-          return;
-        }
-
-        // 영상 목록 버튼 만들기
-        videoList.replaceChildren();
-
-        currentVideos.forEach(file => {
-          const button = document.createElement("button");
-          button.className = "video-item";
-          button.textContent = getVideoTitle(file.name);
-
-          button.addEventListener("click", () => {
-            playVideo(file, subject);
-          });
-
-          videoList.appendChild(button);
-        });
-
-      } catch (error) {
-        // 오래된 요청의 오류는 현재 화면에 표시하지 않음
-        if (thisLoadNumber !== loadNumber) {
-          return;
-        }
-
-        console.error("영상 목록 불러오기 오류:", error);
-
-        showMessage(
-          "영상 목록을 불러오지 못했어.\n" +
-          "Supabase URL, 키, 버킷 이름, 폴더 이름 및 Storage 정책을 확인해 줘."
-        );
-      }
-    }
-
-    // 선택한 영상 재생하기
-    function playVideo(file, subject) {
-      // 다른 과목의 영상이 재생되는 것을 방지
-      if (subject !== currentSubject) {
-        return;
-      }
-
-      // 파일의 실제 영문 폴더 경로 사용
-      const folderName = subjectFolders[subject];
-      const filePath = `${folderName}/${file.name}`;
-
-      const { data } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(filePath);
-
-      const video = document.createElement("video");
-      video.controls = true;
-      video.playsInline = true;
-      video.preload = "metadata";
-      video.src = data.publicUrl;
-
-      // 재생 오류 안내
-      video.addEventListener("error", () => {
-        videoDescription.textContent =
-          "영상을 재생할 수 없어.\n" +
-          "파일 주소, 공개 설정, 파일 형식을 확인해 줘.";
-      });
-
-      playerArea.replaceChildren(video);
-
-      videoTitle.textContent = getVideoTitle(file.name);
-      videoDescription.textContent = "";
-
-      // 선택한 영상 버튼 강조
-      document.querySelectorAll(".video-item").forEach(button => {
-        button.classList.toggle(
-          "active",
-          button.textContent === getVideoTitle(file.name)
-        );
-      });
-    }
-
-    // 과목 버튼 클릭 이벤트 연결
-    subjectButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        loadVideos(button.dataset.subject);
-      });
-    });
-
-    // 사이트를 처음 열면 국어 영상 목록 표시
-    loadVideos("국어");
-  </script>
 </body>
 </html>
